@@ -1,0 +1,155 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows-x64
+            os: windows-latest
+            asset_suffix: windows-x64
+          - name: macos-arm64
+            os: macos-15
+            asset_suffix: macos-arm64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: .python-version
+          cache: pip
+
+      - name: Install uv
+        run: python -m pip install --upgrade pip uv
+
+      - name: Install dependencies
+        run: |
+          uv sync
+          uv pip install pip
+
+      - name: Prepare macOS deploy spec
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/icon.iconset
+          for size in 16 32 128 256 512; do
+            sips -z "$size" "$size" src/snappdf/assets/icon.png --out "build/icon.iconset/icon_${size}x${size}.png"
+            retina=$((size * 2))
+            sips -z "$retina" "$retina" src/snappdf/assets/icon.png --out "build/icon.iconset/icon_${size}x${size}@2x.png"
+          done
+          iconutil -c icns build/icon.iconset -o src/snappdf/assets/icon.icns
+          python - <<'PY'
+          from configparser import ConfigParser
+
+          config = ConfigParser(allow_no_value=True)
+          config.read("pysidedeploy.spec", encoding="utf-8")
+          config.set("app", "icon", "src/snappdf/assets/icon.icns")
+          with open("pysidedeploy.macos.spec", "w", encoding="utf-8") as file:
+              config.write(file, space_around_delimiters=True)
+          PY
+
+      - name: Build Windows app
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist | Out-Null
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          if (Test-Path $vswhere) {
+            $vsPath = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          }
+          if ($vsPath) {
+            $vcvars = Join-Path $vsPath "VC\Auxiliary\Build\vcvars64.bat"
+          }
+          if ($vcvars -and (Test-Path $vcvars)) {
+            $cmd = "`"$vcvars`" && uv run pyside6-deploy -c pysidedeploy.spec -f"
+            cmd.exe /s /c $cmd
+            if ($LASTEXITCODE -ne 0) {
+              exit $LASTEXITCODE
+            }
+          } else {
+            uv run pyside6-deploy -c pysidedeploy.spec -f
+          }
+
+      - name: Build macOS app
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          mkdir -p dist
+          uv run pyside6-deploy -c pysidedeploy.macos.spec -f
+
+      - name: Archive Windows app
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force release | Out-Null
+          Compress-Archive -Path dist\SnapPDF.exe -DestinationPath "release\SnapPDF-${{ github.ref_name }}-${{ matrix.asset_suffix }}.zip" -Force
+
+      - name: Archive macOS app
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release
+          ditto -c -k --sequesterRsrc --keepParent "dist/SnapPDF.app" "release/SnapPDF-${{ github.ref_name }}-${{ matrix.asset_suffix }}.zip"
+
+      - name: Upload packaged app
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.name }}
+          path: release/*.zip
+          if-no-files-found: error
+
+  release:
+    name: Publish GitHub release
+    runs-on: ubuntu-latest
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download packaged apps
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          merge-multiple: true
+
+      - name: Create release and upload assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ github.ref_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -d '' files < <(find release-assets -type f -name '*.zip' -print0)
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "No release assets found" >&2
+            exit 1
+          fi
+
+          if ! gh release view "$TAG_NAME" >/dev/null 2>&1; then
+            gh release create "$TAG_NAME" --title "SnapPDF $TAG_NAME" --generate-notes --draft
+          else
+            gh release edit "$TAG_NAME" --title "SnapPDF $TAG_NAME"
+          fi
+
+          gh release upload "$TAG_NAME" "${files[@]}" --clobber

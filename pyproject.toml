@@ -1,0 +1,36 @@
+[project]
+name = "snappdf"
+version = "1.0.0"
+description = "将 PDF 每一页导出为指定格式图片的桌面工具"
+readme = "README.md"
+requires-python = ">=3.14"
+license = { file = "LICENSE" }
+authors = [
+    { name = "yuniyouguan", email = "niyouguanyu@gmail.com" },
+]
+dependencies = [
+    "pyside6>=6.11.0",
+]
+
+[project.urls]
+Repository = "https://github.com/SpectacleHQ/snappdf"
+
+[project.scripts]
+snappdf = "snappdf:main"
+
+[tool.pyside6-project]
+files = [
+    "src/snappdf/__main__.py",
+    "src/snappdf/app.py",
+    "src/snappdf/__init__.py",
+    "src/snappdf/main_window.py",
+    "src/snappdf/converter.py",
+    "src/snappdf/theme.py",
+    "src/snappdf/ui_main_window.py",
+    "src/snappdf/main_window.ui",
+    "src/snappdf/assets/resources_rc.py",
+]
+
+[build-system]
+requires = ["uv_build>=0.11.3,<0.12.0"]
+build-backend = "uv_build"

@@ -84,6 +84,10 @@ SnapPDF 使用 GitHub Actions 在打 tag 时构建发布包：
 
 Code signing policy: [docs/code-signing-policy.md](docs/code-signing-policy.md)
 
+## Privacy Policy
+
+See [Privacy Policy](docs/privacy-policy.md).
+
 ## 技术栈
 
 - Python 3.14+

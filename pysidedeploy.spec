@@ -64,7 +64,7 @@ mode = onefile
 
 # Specify any extra Nuitka arguments.
 # Version metadata is embedded in Windows binaries and helps users identify official builds.
-extra_args = --quiet --noinclude-qt-translations --assume-yes-for-downloads --company-name=SpectacleHQ --product-name=SnapPDF --file-version=1.0.0.0 --product-version=1.0.0.0 "--file-description=SnapPDF PDF to image converter" "--copyright=Copyright (c) 2026 yuniyouguan" "--trademarks=SnapPDF"
+extra_args = --quiet --noinclude-qt-translations --assume-yes-for-downloads --windows-console-mode=disable --company-name=SpectacleHQ --product-name=SnapPDF --file-version=1.0.0.0 --product-version=1.0.0.0 "--file-description=SnapPDF PDF to image converter" "--copyright=Copyright (c) 2026 yuniyouguan" "--trademarks=SnapPDF"
 
 [buildozer]
 

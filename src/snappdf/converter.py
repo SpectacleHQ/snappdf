@@ -6,7 +6,7 @@
 from pathlib import Path
 
 from PySide6.QtCore import QSize, QThread, Signal
-from PySide6.QtGui import QImage, QImageWriter
+from PySide6.QtGui import QImage, QImageWriter, QPainter
 from PySide6.QtPdf import QPdfDocument, QPdfDocumentRenderOptions
 
 PDF_POINTS_PER_INCH = 72.0
@@ -68,6 +68,21 @@ def _save_image(image: QImage, out_path: str, ext: str, quality: int) -> None:
         raise RuntimeError(f"保存图片失败：{writer.errorString()}")
 
 
+def _flatten_page_background(image: QImage) -> QImage:
+    """将透明 PDF 页面合成到白色纸张背景。"""
+    if image.isNull() or not image.hasAlphaChannel():
+        return image.convertToFormat(QImage.Format.Format_RGB32)
+
+    flattened = QImage(image.size(), QImage.Format.Format_RGB32)
+    flattened.fill(0xFFFFFFFF)
+
+    painter = QPainter(flattened)
+    painter.drawImage(0, 0, image)
+    painter.end()
+
+    return flattened
+
+
 class ConvertWorker(QThread):
     """PDF 转图片的工作线程。"""
 
@@ -117,7 +132,9 @@ class ConvertWorker(QThread):
 
                 out_name = f"{Path(self._pdf_path).stem}_page{page_num + 1}.{ext}"
                 out_path = str(Path(self._output_dir) / out_name)
-                _save_image(image, out_path, ext, self._quality)
+                _save_image(
+                    _flatten_page_background(image), out_path, ext, self._quality
+                )
 
                 output_paths.append(out_path)
                 self.progress_changed.emit(i + 1, len(target_pages), out_name)

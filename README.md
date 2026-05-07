@@ -23,7 +23,7 @@ SnapPDF 是一个开源桌面工具，用于将 PDF 页面批量导出为 PNG、
 
 目前发布包尚未进行 Windows 代码签名。首次运行时，Windows Defender、SmartScreen 或其他安全软件可能会显示未知发布者提示。这通常是因为该版本还没有代码签名证书和下载信誉，并不表示 SnapPDF 会联网收集或上传你的文件。
 
-代码签名计划、发布产物范围和安全边界见 [Code Signing Policy](docs/code-signing-policy.md)。
+Code signing policy: [docs/code-signing-policy.md](docs/code-signing-policy.md)
 
 如果你不想直接运行未签名二进制文件，可以从源码运行：
 
@@ -82,7 +82,7 @@ SnapPDF 使用 GitHub Actions 在打 tag 时构建发布包：
 - 如果下载的是未签名版本，Windows 可能会给出安全提示；这是代码签名和应用信誉问题，不等同于恶意软件判定。
 - 项目计划申请开源代码签名，以降低 Windows 用户安装和运行时的误报与拦截。
 
-更多说明见 [Code Signing Policy](docs/code-signing-policy.md)。
+Code signing policy: [docs/code-signing-policy.md](docs/code-signing-policy.md)
 
 ## 技术栈
 

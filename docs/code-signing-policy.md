@@ -12,11 +12,25 @@ This document describes how SnapPDF intends to use code signing for release arti
 
 SnapPDF is an open source desktop application. It processes PDF files locally on the user's machine and does not require an account, online service, or file upload to perform conversions.
 
+## Code Signing Provider
+
+Free code signing provided by SignPath.io, certificate by SignPath Foundation.
+
+If accepted by SignPath Foundation, official Windows release artifacts will be signed through the SignPath.io signing workflow. The certificate publisher may appear as SignPath Foundation rather than as an individual developer or SpectacleHQ.
+
 ## Current Signing Status
 
 Windows release artifacts are currently unsigned. Because of this, Windows Defender, Microsoft SmartScreen, or third-party antivirus products may show an unknown publisher warning or flag early downloads with low reputation.
 
 The project plans to use open source code signing for future Windows releases. If accepted by an open source signing program such as SignPath Foundation, the Windows executable may be signed under that program's signing identity rather than under a personal developer certificate.
+
+## Project Roles
+
+- Authors / Committers: yuniyouguan
+- Reviewers: yuniyouguan
+- Signing Approvers: yuniyouguan
+
+Only maintainers with repository write access may approve official release signing requests.
 
 ## Signing Scope
 
@@ -70,6 +84,8 @@ https://github.com/SpectacleHQ/snappdf/releases
 ## Privacy and Network Behavior
 
 SnapPDF is designed to convert files locally. The application logic does not upload PDF files, exported images, or document contents to a remote server.
+
+This program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it.
 
 If future features require network access, the README and this policy should be updated before those features are released.
 
